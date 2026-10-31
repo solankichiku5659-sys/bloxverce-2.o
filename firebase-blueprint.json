@@ -1,0 +1,268 @@
+{
+  "entities": {
+    "AdminPrivilege": {
+      "title": "AdminPrivilege",
+      "description": "Tracks users who have unlocked the hidden Owner Panel using the owner password.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the authenticated user."
+        },
+        "passcode": {
+          "type": "string",
+          "description": "Verified owner passcode token."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when owner privileges were granted. Clients must submit FieldValue.serverTimestamp()."
+        }
+      },
+      "required": ["userId", "passcode", "createdAt"]
+    },
+    "Game": {
+      "title": "Game",
+      "description": "Metadata and HTML5 game payload for a BloxVerse game.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the game."
+        },
+        "platformId": {
+          "type": "string",
+          "enum": ["bloxverse"],
+          "description": "Platform partition identifier for secure collection queries."
+        },
+        "title": {
+          "type": "string",
+          "description": "Display title of the game."
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description and instructions for the game."
+        },
+        "thumbnail": {
+          "type": "string",
+          "description": "Thumbnail artwork key or image URL."
+        },
+        "gameUrl": {
+          "type": "string",
+          "description": "Playable HTML5 bundle content or HTTPS game URL."
+        },
+        "category": {
+          "type": "string",
+          "enum": ["Obby", "Tycoon", "Simulator", "Adventure", "Action", "Arcade", "Puzzle"],
+          "description": "Primary genre category of the game."
+        },
+        "creator": {
+          "type": "string",
+          "description": "Display name of the game creator (default: BloxVerse)."
+        },
+        "plays": {
+          "type": "integer",
+          "description": "Total number of game sessions launched."
+        },
+        "likes": {
+          "type": "integer",
+          "description": "Total number of user likes."
+        },
+        "rating": {
+          "type": "number",
+          "description": "Average star rating from 0.0 to 5.0."
+        },
+        "ratingCount": {
+          "type": "integer",
+          "description": "Total number of ratings submitted."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "disabled"],
+          "description": "Publication status controlled by the Owner."
+        },
+        "featured": {
+          "type": "boolean",
+          "description": "Whether the game appears in the Featured hero carousel."
+        },
+        "ownerUid": {
+          "type": "string",
+          "description": "UID of the owner who published the game."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of creation. Clients must submit FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last update. Clients must submit FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "id",
+        "platformId",
+        "title",
+        "description",
+        "thumbnail",
+        "gameUrl",
+        "category",
+        "creator",
+        "plays",
+        "likes",
+        "rating",
+        "ratingCount",
+        "status",
+        "featured",
+        "ownerUid",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Public gaming profile and stats for a BloxVerse player.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated user UID."
+        },
+        "username": {
+          "type": "string",
+          "description": "Player display name."
+        },
+        "avatarKey": {
+          "type": "string",
+          "description": "Selected neon avatar preset identifier."
+        },
+        "bio": {
+          "type": "string",
+          "description": "Player status or bio message."
+        },
+        "totalPlays": {
+          "type": "integer",
+          "description": "Total games played by this user."
+        },
+        "favoriteGameIds": {
+          "type": "string",
+          "description": "Comma-delimited bounded string of favorite game IDs."
+        },
+        "likedGameIds": {
+          "type": "string",
+          "description": "Comma-delimited bounded string of liked game IDs."
+        },
+        "recentGameIds": {
+          "type": "string",
+          "description": "Comma-delimited bounded string of recently played game IDs."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of account creation. Clients must submit FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of profile update. Clients must submit FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "username",
+        "avatarKey",
+        "bio",
+        "totalPlays",
+        "favoriteGameIds",
+        "likedGameIds",
+        "recentGameIds",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "GameReview": {
+      "title": "GameReview",
+      "description": "Player rating and review comment for a specific game.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique review document ID."
+        },
+        "gameId": {
+          "type": "string",
+          "description": "ID of the reviewed game."
+        },
+        "userId": {
+          "type": "string",
+          "description": "UID of the reviewing user."
+        },
+        "userName": {
+          "type": "string",
+          "description": "Display name of the reviewing user."
+        },
+        "rating": {
+          "type": "integer",
+          "description": "Star rating between 1 and 5."
+        },
+        "comment": {
+          "type": "string",
+          "description": "Review text content."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["published"],
+          "description": "Review publication status."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when review was submitted. Clients must submit FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when review was updated. Clients must submit FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "id",
+        "gameId",
+        "userId",
+        "userName",
+        "rating",
+        "comment",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/admins/{adminId}": {
+      "schema": {
+        "$ref": "#/entities/AdminPrivilege"
+      },
+      "description": "Stores verified Owner Panel session registrations."
+    },
+    "/games/{gameId}": {
+      "schema": {
+        "$ref": "#/entities/Game"
+      },
+      "description": "Stores all BloxVerse games, metadata, play/like counters, and HTML5 packages."
+    },
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "Stores per-user profiles, favorite game IDs, liked game IDs, and recently played game IDs."
+    },
+    "/reviews/{reviewId}": {
+      "schema": {
+        "$ref": "#/entities/GameReview"
+      },
+      "description": "Stores user ratings and reviews for games."
+    }
+  }
+}

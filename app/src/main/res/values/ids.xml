@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="game_player_holder" type="id" />
+    <item name="game_player_webview" type="id" />
+</resources>

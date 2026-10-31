@@ -1,0 +1,6 @@
+{
+  "name": "BloxVerse",
+  "description": "A Roblox-inspired multi-game platform to discover, play, rate, and publish HTML5 and Android APK games with real-time cloud sync.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

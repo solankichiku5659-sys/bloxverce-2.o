@@ -1,0 +1,271 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Safety Net: Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Global Hardened Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isRegisteredOwnerToken(ownerToken) {
+      return ownerToken is string &&
+             ownerToken.size() >= 1 &&
+             ownerToken.size() <= 128 && (
+               ownerToken == 'bloxverse_verified_owner' ||
+               (isSignedIn() && ownerToken == request.auth.uid) ||
+               (isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid))) ||
+               exists(/databases/$(database)/documents/admins/$(ownerToken))
+             );
+    }
+
+    function isAdmin() {
+      return (isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid))) ||
+             exists(/databases/$(database)/documents/admins/bloxverse_verified_owner);
+    }
+
+    // 3. Entity Validation Blueprints
+    function isValidAdminPrivilege(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.passcode is string && data.passcode == 'games' &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    function isValidGame(data) {
+      return data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+             data.platformId is string && data.platformId in ['bloxverse', 'bloxverse_live_v2'] &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 100 &&
+             data.description is string && data.description.size() >= 0 && data.description.size() <= 4000 &&
+             data.thumbnail is string && data.thumbnail.size() >= 1 && data.thumbnail.size() <= 200000 &&
+             data.gameUrl is string && data.gameUrl.size() >= 0 && data.gameUrl.size() <= 900000 &&
+             data.category is string && data.category.size() >= 1 && data.category.size() <= 60 &&
+             data.creator is string && data.creator.size() >= 0 && data.creator.size() <= 100 &&
+             data.plays is int && data.plays >= 0 &&
+             data.likes is int && data.likes >= 0 &&
+             (data.rating is int || data.rating is number) && data.rating >= 0 && data.rating <= 5 &&
+             data.ratingCount is int && data.ratingCount >= 0 &&
+             data.status is string && data.status in ['active', 'disabled'] &&
+             data.featured is bool &&
+             (!('sortOrder' in data) || (data.sortOrder is int && data.sortOrder >= 0)) &&
+             (!('gameType' in data) || (data.gameType is string && data.gameType.size() <= 30)) &&
+             (!('apkPackageName' in data) || (data.apkPackageName is string && data.apkPackageName.size() <= 200)) &&
+             (!('apkVersion' in data) || (data.apkVersion is string && data.apkVersion.size() <= 100)) &&
+             (!('apkFileSize' in data) || (data.apkFileSize is int && data.apkFileSize >= 0)) &&
+             data.ownerUid is string && data.ownerUid.size() >= 1 && data.ownerUid.size() <= 128 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidGameChunk(data) {
+      return data.gameId is string && data.gameId.size() >= 1 && data.gameId.size() <= 128 &&
+             data.chunkIndex is int && data.chunkIndex >= 0 && data.chunkIndex <= 200 &&
+             data.content is string && data.content.size() >= 1 && data.content.size() <= 600000 &&
+             data.ownerUid is string && data.ownerUid.size() >= 1 && data.ownerUid.size() <= 128;
+    }
+
+    function isValidGameProgress(data) {
+      return data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+             data.gameId is string && data.gameId.size() >= 1 && data.gameId.size() <= 128 &&
+             data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.userName is string && data.userName.size() >= 1 && data.userName.size() <= 60 &&
+             data.currentLevel is int && data.currentLevel >= 1 && data.currentLevel <= 100000 &&
+             data.maxLevel is int && data.maxLevel >= 1 && data.maxLevel <= 100000 &&
+             data.lastScore is int && data.lastScore >= 0 &&
+             data.highScore is int && data.highScore >= 0 &&
+             data.storageJson is string && data.storageJson.size() <= 450000 &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.username is string && data.username.size() >= 1 && data.username.size() <= 50 &&
+             data.avatarKey is string && data.avatarKey.size() >= 1 && data.avatarKey.size() <= 60 &&
+             data.bio is string && data.bio.size() <= 300 &&
+             data.totalPlays is int && data.totalPlays >= 0 &&
+             data.favoriteGameIds is string && data.favoriteGameIds.size() <= 5000 &&
+             data.likedGameIds is string && data.likedGameIds.size() <= 5000 &&
+             data.recentGameIds is string && data.recentGameIds.size() <= 5000 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidGameReview(data) {
+      return data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+             data.gameId is string && data.gameId.size() >= 1 && data.gameId.size() <= 128 &&
+             data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.userName is string && data.userName.size() >= 1 && data.userName.size() <= 60 &&
+             data.rating is int && data.rating >= 1 && data.rating <= 5 &&
+             data.comment is string && data.comment.size() >= 1 && data.comment.size() <= 500 &&
+             data.status is string && data.status == 'published' &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // 4. Collection Rules: Owner Session Registration (/admins/{adminId})
+    match /admins/{adminId} {
+      allow get: if isValidId(adminId);
+      allow list: if true;
+
+      allow create, update: if isValidId(adminId) &&
+                               incoming().userId == adminId &&
+                               isValidAdminPrivilege(incoming());
+
+      allow delete: if isValidId(adminId) && isRegisteredOwnerToken(adminId);
+    }
+
+    // 5. Collection Rules: Games Catalog (/games/{gameId})
+    match /games/{gameId} {
+      allow get: if isValidId(gameId) && (existing().platformId in ['bloxverse', 'bloxverse_live_v2']);
+      allow list: if existing().platformId in ['bloxverse', 'bloxverse_live_v2'];
+
+      // Owner can upload/create games permanently to Cloud Firestore
+      allow create: if isValidId(gameId) &&
+                       incoming().id == gameId &&
+                       incoming().keys().hasAll([
+                         'id', 'platformId', 'title', 'description', 'thumbnail',
+                         'gameUrl', 'category', 'creator', 'plays', 'likes',
+                         'rating', 'ratingCount', 'status', 'featured',
+                         'ownerUid', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'id', 'platformId', 'title', 'description', 'thumbnail',
+                         'gameUrl', 'category', 'creator', 'plays', 'likes',
+                         'rating', 'ratingCount', 'status', 'featured', 'sortOrder',
+                         'gameType', 'apkPackageName', 'apkVersion', 'apkFileSize',
+                         'ownerUid', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidGame(incoming()) &&
+                       isRegisteredOwnerToken(incoming().ownerUid);
+
+      allow update: if isValidId(gameId) &&
+                       isValidGame(incoming()) &&
+                       incoming().id == existing().id &&
+                       incoming().platformId == existing().platformId && (
+                         (isRegisteredOwnerToken(incoming().ownerUid) &&
+                          incoming().diff(existing()).affectedKeys().hasOnly([
+                            'title', 'description', 'thumbnail', 'gameUrl',
+                            'category', 'creator', 'plays', 'likes', 'rating',
+                            'ratingCount', 'status', 'featured', 'sortOrder',
+                            'gameType', 'apkPackageName', 'apkVersion', 'apkFileSize',
+                            'ownerUid', 'updatedAt'
+                          ])) ||
+                         (existing().status == 'active' &&
+                          incoming().ownerUid == existing().ownerUid &&
+                          incoming().diff(existing()).affectedKeys().hasOnly([
+                            'plays', 'likes', 'rating', 'ratingCount', 'updatedAt'
+                          ]))
+                       );
+
+      allow delete: if isValidId(gameId) &&
+                       isRegisteredOwnerToken(existing().ownerUid);
+    }
+
+    // 6. Collection Rules: Large Game Bundle Chunks (/game_chunks/{chunkId})
+    match /game_chunks/{chunkId} {
+      allow get: if isValidId(chunkId);
+      allow list: if true;
+
+      allow create, update: if isValidId(chunkId) &&
+                               isValidGameChunk(incoming()) &&
+                               isRegisteredOwnerToken(incoming().ownerUid);
+
+      allow delete: if isValidId(chunkId) &&
+                       isRegisteredOwnerToken(existing().ownerUid);
+    }
+
+    // 7. Collection Rules: Player Game Progress - Levels, Scores & Checkpoints (/game_progress/{progressId})
+    match /game_progress/{progressId} {
+      allow get: if isValidId(progressId);
+      allow list: if true;
+
+      allow create, update: if isValidId(progressId) &&
+                               incoming().id == progressId &&
+                               isValidGameProgress(incoming());
+    }
+
+    // 8. Collection Rules: User Profiles (/users/{userId})
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+                       isValidId(userId) &&
+                       request.auth.uid == userId &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll([
+                         'userId', 'username', 'avatarKey', 'bio', 'totalPlays',
+                         'favoriteGameIds', 'likedGameIds', 'recentGameIds',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'username', 'avatarKey', 'bio', 'totalPlays',
+                         'favoriteGameIds', 'likedGameIds', 'recentGameIds',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(userId) &&
+                       isValidUserProfile(incoming()) &&
+                       request.auth.uid == userId &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'username', 'avatarKey', 'bio', 'totalPlays',
+                         'favoriteGameIds', 'likedGameIds', 'recentGameIds', 'updatedAt'
+                       ]);
+
+      allow delete: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+    }
+
+    // 9. Collection Rules: Game Reviews (/reviews/{reviewId})
+    match /reviews/{reviewId} {
+      allow get: if isValidId(reviewId) && (existing().status == 'published');
+      allow list: if existing().status == 'published';
+
+      allow create: if isValidId(reviewId) &&
+                       incoming().id == reviewId &&
+                       (!isSignedIn() || incoming().userId == request.auth.uid) &&
+                       incoming().keys().hasAll([
+                         'id', 'gameId', 'userId', 'userName', 'rating',
+                         'comment', 'status', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'id', 'gameId', 'userId', 'userName', 'rating',
+                         'comment', 'status', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidGameReview(incoming()) &&
+                       exists(/databases/$(database)/documents/games/$(incoming().gameId));
+
+      allow update: if isValidId(reviewId) &&
+                       isValidGameReview(incoming()) &&
+                       (!isSignedIn() || existing().userId == request.auth.uid) &&
+                       incoming().id == existing().id &&
+                       incoming().gameId == existing().gameId &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'userName', 'rating', 'comment', 'updatedAt'
+                       ]);
+
+      allow delete: if isSignedIn() && isValidId(reviewId) && (existing().userId == request.auth.uid || isAdmin());
+    }
+  }
+}
